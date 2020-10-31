@@ -46,3 +46,11 @@ flags:
   -q : decrease verbosity (may be given several times)
   -v : increase verbosity (may be given several times)
 ----
+
+== Installation
+
+This is a standard automake build.  Simply run:
+
+$ automake
+$ ./configure --prefix=...
+$ make -j install
