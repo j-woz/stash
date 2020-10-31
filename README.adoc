@@ -1,0 +1,48 @@
+
+= Stash for Subversion
+
+A tool to stash changes to a file in a Subversion repository.
+
+Based on +svn diff+ and +patch+.
+
+== Example
+
+. Edit your +file.c+
+. Realize you made two distinct changes
+. Use 'stash push' to save one of them
+. Now you have a working copy with only one change, and a stash file (file.c.stash)
+. Commit file.c with one change
+. Use 'stash pop' to put the remaining change back in your working copy, which zeroes out the stash file
+. Commit file.c with the other change
+
+== Concepts
+
+The stash file is a simple text file with the diff hunks in it.
+New hunks are pushed to the top of this file.  You can even edit this file directly!  stash uses +svn diff+ and +patch+ to move hunks back and forth from the stash file and your working copy.
+
+== Usage
+
+The stash push and pop commands accept a hunk-list as an argument.  
+This can be:
+
+* '@' for all hunks
+* '1,2,3' a comma-separated list of hunks
+* nothing for an interactive mode like 'git add --patch'
+
+== Usage text
+
+----
+stash: usage:
+
+  stash push|pop <flags> <file> <hunks>?
+
+  where hunks is
+  * nothing -> interactive mode
+  * a comma-separated list of integers
+  * '@' -> all hunks
+
+flags:
+  -h : help
+  -q : decrease verbosity (may be given several times)
+  -v : increase verbosity (may be given several times)
+----
