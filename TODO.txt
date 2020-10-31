@@ -1,0 +1,9 @@
+
+Better long line error handling with diff offset line numbers.
+Needed in case of corrupted files (Emacs Tramp).
+
+Git mode (when merging with multiple stashes)
+
+No ENTER required for input (need curses?)
+
+Bold prompts - DONE
