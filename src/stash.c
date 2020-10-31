@@ -77,9 +77,13 @@ cat(const char* filename)
 bool
 stash_subcmd_lookup(const char* text, stash_subcmd* subcmd)
 {
-  if (text[0] == 's')
-    *subcmd = STASH_SUBCMD_SAVE;
-  else if (text[0] == 'p')
+  if (strlen(text) < 2)
+    return false;
+  if (text[0] != 'p')
+    return false;
+  if (text[1] == 'u')
+    *subcmd = STASH_SUBCMD_PUSH;
+  else if (text[1] == 'o')
     *subcmd = STASH_SUBCMD_POP;
   else
     return false;
@@ -87,7 +91,7 @@ stash_subcmd_lookup(const char* text, stash_subcmd* subcmd)
 }
 
 static bool hunk_ids_contains(int index, struct list* hunk_ids);
-static bool stash_save_hunks(struct list* hunks,
+static bool stash_push_hunks(struct list* hunks,
                              struct list* hunk_ids,
                              const char* stash_name);
 static bool stash_resolve(struct list* hunks, struct list* hunk_ids,
@@ -96,15 +100,15 @@ static bool stash_resolve(struct list* hunks, struct list* hunk_ids,
 bool stash_parse_diff(stash_file* diff, struct list* hunks);
 bool stash_make_diff(const char* file, stash_file* diff);
 
-static bool stash_save_hunks_interactive(struct list* hunks,
+static bool stash_push_hunks_interactive(struct list* hunks,
                                          const char* text_name,
                                          stash_file* diff);
 
-bool stash_save_ids(struct list* hunks, const char* hunk_ids_s,
+bool stash_push_ids(struct list* hunks, const char* hunk_ids_s,
                     const char* text_name, const char* stash_name);
 
 bool
-stash_save(const char* text_name, const char* hunk_ids_s)
+stash_push(const char* text_name, const char* hunk_ids_s)
 {
   bool result = true;
   CHECK(text_name != NULL, "provide a file!");
@@ -114,7 +118,7 @@ stash_save(const char* text_name, const char* hunk_ids_s)
 
   bool b;
   b = stash_make_diff(text_name, &diff);
-  CHECK_GOTO(b, done2, "stash save: could not make diff");
+  CHECK_GOTO(b, done2, "stash push: could not make diff");
 
   stash_file stash;
   stash_file_init(&stash, "stash");
@@ -131,11 +135,11 @@ stash_save(const char* text_name, const char* hunk_ids_s)
   stash_log(STASH_INFO, "found %i hunk%s",
             hunks.size, plural(hunks.size));
   if (hunk_ids_s == NULL)
-    b = stash_save_hunks_interactive(&hunks, text_name, &diff);
+    b = stash_push_hunks_interactive(&hunks, text_name, &diff);
   else
-    b = stash_save_ids(&hunks, hunk_ids_s, text_name, stash.name);
+    b = stash_push_ids(&hunks, hunk_ids_s, text_name, stash.name);
 
-  CHECK_GOTO(b, done1, "save failed!");
+  CHECK_GOTO(b, done1, "push failed!");
 
   done1:
   list_destruct(&hunks, NULL);
@@ -504,20 +508,20 @@ static bool stash_resolve_hunk(const char* hunk,
 
 static bool cp_fps(FILE* fp1, FILE* fp2);
 
-static int prompt_save(int index, const char* hunk);
+static int prompt_push(int index, const char* hunk);
 
-static void save_i_switch_s(bool success, int* index, int* saves,
+static void push_i_switch_s(bool success, int* index, int* pushes,
                             bool* loop, bool* result);
 
-static void save_i_switch_d(bool success, int* index,
+static void push_i_switch_d(bool success, int* index,
                             bool* loop, bool* result);
 
 static bool
-stash_save_hunks_interactive(struct list* hunks,
+stash_push_hunks_interactive(struct list* hunks,
                              const char*  text_name,
                              stash_file*  diff)
 {
-  stash_log(STASH_DEBUG, "stash_save_hunks_interactive...");
+  stash_log(STASH_DEBUG, "stash_push_hunks_interactive...");
 
   stash_file stash, stash_backup;
   bool stash_existed;
@@ -541,7 +545,7 @@ stash_save_hunks_interactive(struct list* hunks,
   stash_temp_file(&errs, "errors");
 
   int  index  = 0;
-  int  saves  = 0;
+  int  pushes  = 0;
   bool loop   = true;
   bool result = true;
   bool b;
@@ -551,18 +555,18 @@ stash_save_hunks_interactive(struct list* hunks,
     void* v;
     list_get(hunks, index, &v);
     char* hunk = v;
-    int c = prompt_save(index, hunk);
+    int c = prompt_push(index, hunk);
     switch (c)
     {
       case 's':
         stash_file_append(&stash, hunk);
         b = stash_resolve_hunk(hunk, text_name, diff, errs.name);
-        save_i_switch_s(b, &index, &saves, &loop, &result);
+        push_i_switch_s(b, &index, &pushes, &loop, &result);
         break;
       case 'd':
         b = stash_resolve_hunk(hunk, text_name,
                                diff, errs.name);
-        save_i_switch_d(b, &index, &loop, &result);
+        push_i_switch_d(b, &index, &loop, &result);
         break;
       case 'k':
         index++; // Noop
@@ -584,13 +588,13 @@ stash_save_hunks_interactive(struct list* hunks,
 
   stash_file_close(&stash);
 
-  stash_log(STASH_INFO, "saved %i hunk%s to %s",
-            saves, plural(saves), stash.name);
+  stash_log(STASH_INFO, "pushed %i hunk%s to %s",
+            pushes, plural(pushes), stash.name);
   return result;
 }
 
 static int
-prompt_save(int index, const char* hunk)
+prompt_push(int index, const char* hunk)
 {
   printf_color(BLUE, "hunk");
   printf(" %i", index+1);
@@ -603,16 +607,16 @@ prompt_save(int index, const char* hunk)
 }
 
 /**
-   save-interactive-switch-s : s means save this hunk
+   push-interactive-switch-s : s means push this hunk
    @param success: are we in a successful state?
  */
 static void
-save_i_switch_s(bool success, int* index, int* saves,
+push_i_switch_s(bool success, int* index, int* pushes,
                 bool* loop, bool* result)
 {
   if (success)
   {
-    (*saves)++;
+    (*pushes)++;
   }
   else
   {
@@ -624,11 +628,11 @@ save_i_switch_s(bool success, int* index, int* saves,
 }
 
 /**
-   save-interactive-switch-d : d means drop this hunk
+   push-interactive-switch-d : d means drop this hunk
    @param success: are we in a successful state?
  */
 static void
-save_i_switch_d(bool success, int* index, bool* loop, bool* result)
+push_i_switch_d(bool success, int* index, bool* loop, bool* result)
 {
   if (!success)
   {
@@ -639,15 +643,15 @@ save_i_switch_d(bool success, int* index, bool* loop, bool* result)
 }
 
 bool
-stash_save_ids(struct list* hunks, const char* hunk_ids_s,
+stash_push_ids(struct list* hunks, const char* hunk_ids_s,
                const char* text_name, const char* stash_name)
 {
   bool b;
   struct list hunk_ids;
   list_init(&hunk_ids);
   list_split(&hunk_ids, hunk_ids_s, ',');
-  b = stash_save_hunks(hunks, &hunk_ids, stash_name);
-  CHECK(b, "save failed!");
+  b = stash_push_hunks(hunks, &hunk_ids, stash_name);
+  CHECK(b, "push failed!");
   b = stash_resolve(hunks, &hunk_ids, text_name);
   CHECK(b, "resolve failed to %s!", text_name);
   list_destruct(&hunk_ids, NULL);
@@ -674,11 +678,11 @@ cp_fps(FILE* fp1, FILE* fp2)
 }
 
 static bool
-stash_save_hunks(struct list* hunks, struct list* hunk_ids,
+stash_push_hunks(struct list* hunks, struct list* hunk_ids,
                  const char* stash_name)
 {
   stash_file tmp;
-  stash_temp_file_fopen(&tmp, "save_tmp");
+  stash_temp_file_fopen(&tmp, "push_tmp");
 
   struct list_item* item = hunks->head;
   int i = 1;

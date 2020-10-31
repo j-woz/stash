@@ -46,8 +46,8 @@ main(int argc, char* argv[])
   rc = stash_init_tmp();
   if (!rc) stash_abort("could not initialize");
 
-  if (subcmd == STASH_SUBCMD_SAVE)
-    rc = stash_save(text_file, hunks);
+  if (subcmd == STASH_SUBCMD_PUSH)
+    rc = stash_push(text_file, hunks);
   else if (subcmd == STASH_SUBCMD_POP)
     rc = stash_pop(text_file, hunks);
 
@@ -95,7 +95,7 @@ unknown_argument(char c)
 
 static char* help_string =
 "stash: usage:" NL NL
-"  stash save|pop <flags> <file> <hunks>?" NL NL
+"  stash push|pop <flags> <file> <hunks>?" NL NL
 "  where hunks is" NL
 "  * nothing -> interactive mode" NL
 "  * a comma-separated list of integers" NL

@@ -13,7 +13,7 @@
 
 typedef enum
 {
-  STASH_SUBCMD_SAVE,
+  STASH_SUBCMD_PUSH,
   STASH_SUBCMD_POP
 } stash_subcmd;
 
@@ -27,7 +27,7 @@ bool stash_subcmd_lookup(const char* text, stash_subcmd* subcmd);
 
 void stash_filename(const char* file, char* output);
 
-bool stash_save(const char* file, const char* hunk_ids);
+bool stash_push(const char* file, const char* hunk_ids);
 
 bool stash_pop(const char* text_file, const char* hunk_ids);
 
