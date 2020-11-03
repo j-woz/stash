@@ -1,10 +1,12 @@
 
 # STASH: CONFIGURE AC
+# Fails with automake 1.13.4
+# Works with automake 1.16.1
 
 AC_PREREQ([2.69])
 AC_INIT([stash], [1.0], [woz@anl.gov])
 AM_INIT_AUTOMAKE([subdir-objects])
-# AM_INIT_AUTOMAKE() # may need this to bootstrap
+# AM_INIT_AUTOMAKE() # may need this to bootstrap in old automake
 AC_CONFIG_SRCDIR([src/stash.c])
 AC_CONFIG_HEADERS([config.h])
 
