@@ -51,6 +51,8 @@ flags:
 
 This is a standard automake build.  Simply run:
 
+----
 $ automake
 $ ./configure --prefix=...
 $ make -j install
+----
