@@ -158,7 +158,7 @@ mkdirp(const char* path)
     int rc = mkdir(done, mode);
     if (rc != 0 && errno != EEXIST)
     {
-      printf("could not mkdir: %s\n", done);
+      printf("could not mkdir: '%s'\n", done);
       perror("stash");
       return false;
     }
