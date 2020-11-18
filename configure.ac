@@ -12,6 +12,7 @@ AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
 AC_PROG_CC
+AC_C_INLINE
 
 # Checks for libraries.
 
@@ -26,7 +27,8 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([ftruncate strchr strdup strstr strtol])
+AC_CHECK_FUNCS([ftruncate mkdir strchr stpcpy strdup strerror \
+                strstr strtol])
 
 VALGRIND=0
 AC_ARG_ENABLE(valgrind,[Enable valgrind special features],
