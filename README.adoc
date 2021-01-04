@@ -52,7 +52,7 @@ flags:
 This is a standard automake build.  Simply run:
 
 ----
-$ automake
+$ autoreconf
 $ ./configure --prefix=...
 $ make -j install
 ----
